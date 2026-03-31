@@ -17,10 +17,13 @@
  */
 package org.ehrbase.service;
 
+import static org.ehrbase.jooq.pg.Tables.STORED_QUERY;
+
 import java.nio.charset.StandardCharsets;
+import java.time.OffsetDateTime;
 import javax.annotation.PostConstruct;
-import org.ehrbase.api.exception.StateConflictException;
-import org.ehrbase.api.service.StoredQueryService;
+import org.jooq.DSLContext;
+import org.jooq.exception.DataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -34,11 +37,11 @@ public class BillingQueryInitializer {
 
     private final Logger logger = LoggerFactory.getLogger(BillingQueryInitializer.class);
 
-    private final StoredQueryService storedQueryService;
+    private final DSLContext context;
     private final ResourcePatternResolver resourceResolver;
 
-    public BillingQueryInitializer(StoredQueryService storedQueryService, ResourcePatternResolver resourceResolver) {
-        this.storedQueryService = storedQueryService;
+    public BillingQueryInitializer(DSLContext context, ResourcePatternResolver resourceResolver) {
+        this.context = context;
         this.resourceResolver = resourceResolver;
     }
 
@@ -60,11 +63,22 @@ public class BillingQueryInitializer {
             return;
         }
         String qualifiedName = filenameToQualifiedName(filename);
+        int separatorIndex = qualifiedName.indexOf("::");
+        String reverseDomainName = qualifiedName.substring(0, separatorIndex);
+        String semanticId = qualifiedName.substring(separatorIndex + 2);
         try {
             String queryText = new String(resource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-            storedQueryService.createStoredQuery(qualifiedName, BillingQueryCatalog.VERSION, queryText, "AQL");
+            context.insertInto(STORED_QUERY)
+                    .set(STORED_QUERY.REVERSE_DOMAIN_NAME, reverseDomainName)
+                    .set(STORED_QUERY.SEMANTIC_ID, semanticId)
+                    .set(STORED_QUERY.SEMVER, BillingQueryCatalog.VERSION)
+                    .set(STORED_QUERY.QUERY_TEXT, queryText)
+                    .set(STORED_QUERY.TYPE, "AQL")
+                    .set(STORED_QUERY.CREATION_DATE, OffsetDateTime.now())
+                    .onConflictDoNothing()
+                    .execute();
             logger.info("Seeded billing query: {}", qualifiedName);
-        } catch (StateConflictException e) {
+        } catch (DataAccessException e) {
             logger.info("Billing query already exists, skipping: {}", qualifiedName);
         } catch (Exception e) {
             logger.warn("Failed to seed billing query: {}", qualifiedName, e);

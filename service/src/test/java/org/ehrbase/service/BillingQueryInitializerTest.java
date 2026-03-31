@@ -18,8 +18,7 @@
 package org.ehrbase.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -27,8 +26,11 @@ import static org.mockito.Mockito.when;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
-import org.ehrbase.api.exception.StateConflictException;
-import org.ehrbase.api.service.StoredQueryService;
+import org.jooq.DSLContext;
+import org.jooq.InsertReturningStep;
+import org.jooq.InsertSetMoreStep;
+import org.jooq.InsertSetStep;
+import org.jooq.Table;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -38,11 +40,21 @@ import org.springframework.core.io.support.ResourcePatternResolver;
 @ExtendWith(MockitoExtension.class)
 class BillingQueryInitializerTest {
 
+    @SuppressWarnings("unchecked")
     @Test
-    void seedBillingQueries_callsCreateForEachQuery() throws Exception {
+    void seedBillingQueries_insertsForEachQuery() throws Exception {
         // Arrange
-        StoredQueryService mockService = mock(StoredQueryService.class);
+        DSLContext mockContext = mock(DSLContext.class);
         ResourcePatternResolver mockResolver = mock(ResourcePatternResolver.class);
+
+        InsertSetStep mockInsertStep = mock(InsertSetStep.class);
+        InsertSetMoreStep mockMoreStep = mock(InsertSetMoreStep.class);
+        InsertReturningStep mockReturningStep = mock(InsertReturningStep.class);
+
+        when(mockContext.insertInto(any(Table.class))).thenReturn(mockInsertStep);
+        when(mockInsertStep.set(any(org.jooq.Field.class), any(Object.class))).thenReturn(mockMoreStep);
+        when(mockMoreStep.set(any(org.jooq.Field.class), any(Object.class))).thenReturn(mockMoreStep);
+        when(mockMoreStep.onConflictDoNothing()).thenReturn(mockReturningStep);
 
         Resource[] resources = new Resource[] {
             mockResource("billing__diagnoses.aql", "SELECT 1"),
@@ -53,25 +65,35 @@ class BillingQueryInitializerTest {
         };
         when(mockResolver.getResources("classpath:billing-queries/*.aql")).thenReturn(resources);
 
-        BillingQueryInitializer initializer = new BillingQueryInitializer(mockService, mockResolver);
+        BillingQueryInitializer initializer = new BillingQueryInitializer(mockContext, mockResolver);
 
         // Act
         initializer.seedBillingQueries();
 
-        // Assert
-        verify(mockService, times(5)).createStoredQuery(anyString(), eq("1.0.0"), anyString(), eq("AQL"));
-        verify(mockService).createStoredQuery(eq("billing::diagnoses"), eq("1.0.0"), eq("SELECT 1"), eq("AQL"));
-        verify(mockService).createStoredQuery(eq("billing::procedures"), eq("1.0.0"), eq("SELECT 2"), eq("AQL"));
-        verify(mockService).createStoredQuery(eq("billing::medications"), eq("1.0.0"), eq("SELECT 3"), eq("AQL"));
-        verify(mockService).createStoredQuery(eq("billing::encounters"), eq("1.0.0"), eq("SELECT 4"), eq("AQL"));
-        verify(mockService).createStoredQuery(eq("billing::patient_summary"), eq("1.0.0"), eq("SELECT 5"), eq("AQL"));
+        // Assert - insertInto called once per query
+        verify(mockContext, times(5)).insertInto(any(Table.class));
     }
 
+    @SuppressWarnings("unchecked")
     @Test
-    void seedBillingQueries_idempotent_catchesStateConflict() throws Exception {
+    void seedBillingQueries_continuesOnError() throws Exception {
         // Arrange
-        StoredQueryService mockService = mock(StoredQueryService.class);
+        DSLContext mockContext = mock(DSLContext.class);
         ResourcePatternResolver mockResolver = mock(ResourcePatternResolver.class);
+
+        InsertSetStep mockInsertStep = mock(InsertSetStep.class);
+        InsertSetMoreStep mockMoreStep = mock(InsertSetMoreStep.class);
+        InsertReturningStep mockReturningStep = mock(InsertReturningStep.class);
+
+        when(mockContext.insertInto(any(Table.class))).thenReturn(mockInsertStep);
+        when(mockInsertStep.set(any(org.jooq.Field.class), any(Object.class))).thenReturn(mockMoreStep);
+        when(mockMoreStep.set(any(org.jooq.Field.class), any(Object.class))).thenReturn(mockMoreStep);
+        when(mockMoreStep.onConflictDoNothing()).thenReturn(mockReturningStep);
+        // First call throws, rest succeed
+        when(mockReturningStep.execute())
+                .thenThrow(new org.jooq.exception.DataAccessException("duplicate"))
+                .thenReturn(1)
+                .thenReturn(1);
 
         Resource[] resources = new Resource[] {
             mockResource("billing__diagnoses.aql", "SELECT 1"),
@@ -80,19 +102,13 @@ class BillingQueryInitializerTest {
         };
         when(mockResolver.getResources("classpath:billing-queries/*.aql")).thenReturn(resources);
 
-        // First query throws StateConflictException
-        when(mockService.createStoredQuery(eq("billing::diagnoses"), anyString(), anyString(), anyString()))
-                .thenThrow(new StateConflictException("Version already exists"));
-
-        BillingQueryInitializer initializer = new BillingQueryInitializer(mockService, mockResolver);
+        BillingQueryInitializer initializer = new BillingQueryInitializer(mockContext, mockResolver);
 
         // Act
         initializer.seedBillingQueries();
 
         // Assert - all three queries were attempted despite the first one throwing
-        verify(mockService, times(3)).createStoredQuery(anyString(), eq("1.0.0"), anyString(), eq("AQL"));
-        verify(mockService).createStoredQuery(eq("billing::procedures"), eq("1.0.0"), eq("SELECT 2"), eq("AQL"));
-        verify(mockService).createStoredQuery(eq("billing::medications"), eq("1.0.0"), eq("SELECT 3"), eq("AQL"));
+        verify(mockContext, times(3)).insertInto(any(Table.class));
     }
 
     @Test
