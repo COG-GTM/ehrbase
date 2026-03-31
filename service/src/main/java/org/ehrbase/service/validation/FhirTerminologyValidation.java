@@ -144,9 +144,6 @@ public class FhirTerminologyValidation implements ExternalTerminologyValidation 
             add("//fhir.hl7.org");
             add("terminology://fhir.hl7.org");
             add("//hl7.org/fhir");
-            add("//terminology.hl7.org");
-            add("//www.ama-assn.org");
-            add("//www.cms.gov");
         }
 
         @Override

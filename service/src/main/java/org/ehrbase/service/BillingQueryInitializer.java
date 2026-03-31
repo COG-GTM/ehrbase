@@ -67,7 +67,10 @@ public class BillingQueryInitializer {
         String reverseDomainName = qualifiedName.substring(0, separatorIndex);
         String semanticId = qualifiedName.substring(separatorIndex + 2);
         try {
-            String queryText = new String(resource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+            String queryText;
+            try (var is = resource.getInputStream()) {
+                queryText = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+            }
             context.insertInto(STORED_QUERY)
                     .set(STORED_QUERY.REVERSE_DOMAIN_NAME, reverseDomainName)
                     .set(STORED_QUERY.SEMANTIC_ID, semanticId)
