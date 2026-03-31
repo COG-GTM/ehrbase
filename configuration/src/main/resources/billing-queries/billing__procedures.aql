@@ -1,0 +1,11 @@
+SELECT e/ehr_id/value as ehr_id,
+       c/uid/value as composition_uid,
+       c/context/start_time/value as procedure_date,
+       a/description[at0001]/items[at0002]/value/value as procedure_text,
+       a/description[at0001]/items[at0002]/value/defining_code/code_string as procedure_code,
+       a/description[at0001]/items[at0002]/value/defining_code/terminology_id/value as code_system
+FROM EHR e
+  CONTAINS COMPOSITION c
+    CONTAINS ACTION a[openEHR-EHR-ACTION.procedure.v1]
+WHERE a/description[at0001]/items[at0002]/value/defining_code/terminology_id/value = $code_system
+  AND e/ehr_id/value = $ehr_id

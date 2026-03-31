@@ -1,0 +1,8 @@
+SELECT e/ehr_id/value as ehr_id,
+       c/uid/value as composition_uid,
+       i/activities[at0001]/description[at0002]/items[at0070]/value/value as medication_name,
+       i/activities[at0001]/description[at0002]/items[at0070]/value/defining_code/code_string as medication_code,
+       i/activities[at0001]/description[at0002]/items[at0070]/value/defining_code/terminology_id/value as code_system
+FROM EHR e
+  CONTAINS COMPOSITION c
+    CONTAINS INSTRUCTION i[openEHR-EHR-INSTRUCTION.medication_order.v3]

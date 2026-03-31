@@ -76,9 +76,15 @@ public class FhirTerminologyValidation implements ExternalTerminologyValidation 
     }
 
     public FhirTerminologyValidation(String baseUrl, boolean failOnError, WebClient webClient) {
+        this(baseUrl, failOnError, webClient, Collections.emptySet());
+    }
+
+    public FhirTerminologyValidation(
+            String baseUrl, boolean failOnError, WebClient webClient, Set<String> additionalAcceptedApis) {
         this.baseUrl = baseUrl;
         this.failOnError = failOnError;
         this.webClient = webClient;
+        this.acceptedFhirApis.addAll(additionalAcceptedApis);
     }
 
     private String extractUrl(String referenceSetUri) {

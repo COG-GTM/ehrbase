@@ -1,0 +1,78 @@
+/*
+ * Copyright (c) 2024 vitasystems GmbH.
+ *
+ * This file is part of project EHRbase
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.ehrbase.rest.openehr;
+
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+
+import java.util.Objects;
+import org.ehrbase.api.service.ExplanationOfBenefitService;
+import org.ehrbase.rest.BaseController;
+import org.ehrbase.rest.openehr.specification.ExplanationOfBenefitApiSpecification;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+@ConditionalOnMissingBean(name = "primaryopenehrexplanationofbenefitcontroller")
+@ConditionalOnProperty(name = "ehrbase.rest.fhir.enabled", havingValue = "true")
+@RestController
+@RequestMapping(
+        path = BaseController.FHIR_API_CONTEXT_PATH + "/ExplanationOfBenefit",
+        produces = {"application/fhir+json", APPLICATION_JSON_VALUE})
+public class OpenehrExplanationOfBenefitController extends BaseController
+        implements ExplanationOfBenefitApiSpecification {
+
+    private final ExplanationOfBenefitService eobService;
+
+    @Autowired
+    public OpenehrExplanationOfBenefitController(ExplanationOfBenefitService eobService) {
+        this.eobService = Objects.requireNonNull(eobService);
+    }
+
+    @GetMapping
+    @Override
+    public ResponseEntity<String> searchByPatient(
+            @RequestHeader(value = ACCEPT, required = false) String accept,
+            @RequestParam(value = "patient") String patientId,
+            @RequestParam(value = "_from", required = false) String fromDate,
+            @RequestParam(value = "_to", required = false) String toDate) {
+        String bundle = eobService.searchByPatient(patientId, fromDate, toDate);
+        return ResponseEntity.ok(bundle);
+    }
+
+    @GetMapping("/{id}")
+    @Override
+    public ResponseEntity<String> readById(
+            @RequestHeader(value = ACCEPT, required = false) String accept, @PathVariable("id") String id) {
+        String eob = eobService.readById(id);
+        return ResponseEntity.ok(eob);
+    }
+
+    @GetMapping("/metadata")
+    @Override
+    public ResponseEntity<String> metadata(@RequestHeader(value = ACCEPT, required = false) String accept) {
+        String capabilityStatement = eobService.getCapabilityStatement();
+        return ResponseEntity.ok(capabilityStatement);
+    }
+}

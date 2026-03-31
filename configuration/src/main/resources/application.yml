@@ -108,6 +108,9 @@ ehrbase:
         generator-details-enabled: false
         # include executed_aql in the AQL meta information
         executed-aql-enabled: true
+    fhir:
+      enabled: false
+      context-path: /rest/fhir/r4
     experimental:
       tags:
         enabled: false
@@ -121,6 +124,9 @@ ehrbase:
         web:
           # disables CSRF protection on management endpoints on base-path to use a client like curl or similar
           csrf-validation-enabled: true
+  billing:
+    queries:
+      seed-on-startup: false
 
 
 httpclient:
@@ -237,6 +243,14 @@ validation:
     #     # request-timeout: 30S # 30 Seconds default
     #     type: FHIR
     #     url: https://r4.ontoserver.csiro.au/fhir/
+    # provider:
+    #   billing-fhir:
+    #     type: BILLING_FHIR
+    #     url: https://tx.fhir.org/r4/
+    #     additional-accepted-apis:
+    #       - "//terminology.hl7.org"
+    #       - "//www.ama-assn.org"
+    #       - "//www.cms.gov"
 
 # SSL Properties (used by Spring WebClient and Apache HTTP Client)
 client:

@@ -1,0 +1,11 @@
+SELECT e/ehr_id/value as ehr_id,
+       c/uid/value as composition_uid,
+       c/context/start_time/value as start_time,
+       c/context/end_time/value as end_time,
+       c/context/setting/value as setting,
+       c/context/setting/defining_code/code_string as setting_code
+FROM EHR e
+  CONTAINS COMPOSITION c
+WHERE e/ehr_id/value = $ehr_id
+  AND c/context/start_time/value >= $from_date
+  AND c/context/start_time/value <= $to_date
