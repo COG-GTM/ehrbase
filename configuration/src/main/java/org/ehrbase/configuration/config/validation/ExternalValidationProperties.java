@@ -18,7 +18,9 @@
 package org.ehrbase.configuration.config.validation;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
@@ -64,7 +66,8 @@ public class ExternalValidationProperties {
     }
 
     public enum ProviderType {
-        FHIR
+        FHIR,
+        BILLING_FHIR
     }
 
     public static class Provider {
@@ -97,6 +100,16 @@ public class ExternalValidationProperties {
 
         public void setUrl(String url) {
             this.url = url;
+        }
+
+        private Set<String> additionalAcceptedApis = new HashSet<>();
+
+        public Set<String> getAdditionalAcceptedApis() {
+            return additionalAcceptedApis;
+        }
+
+        public void setAdditionalAcceptedApis(Set<String> additionalAcceptedApis) {
+            this.additionalAcceptedApis = additionalAcceptedApis;
         }
     }
 }

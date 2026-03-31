@@ -20,6 +20,7 @@ package org.ehrbase.configuration.config.validation;
 import com.jayway.jsonpath.DocumentContext;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.ehrbase.api.exception.BadGatewayException;
 import org.ehrbase.api.exception.InternalServerException;
 import org.ehrbase.cache.CacheProvider;
@@ -102,6 +103,9 @@ public class ValidationConfiguration {
 
         final WebClient webClient = buildWebClient(oauth2Client);
 
+        if (provider.getType() == ExternalValidationProperties.ProviderType.BILLING_FHIR) {
+            return billingFhirTerminologyValidation(provider.getUrl(), provider.getAdditionalAcceptedApis(), webClient);
+        }
         if (provider.getType() == ExternalValidationProperties.ProviderType.FHIR) {
             return fhirTerminologyValidation(provider.getUrl(), webClient);
         }
@@ -127,6 +131,28 @@ public class ValidationConfiguration {
 
     public static ExternalTerminologyValidation nopTerminologyValidation() {
         return new NopExternalTerminologyValidation(ERR_MSG);
+    }
+
+    private FhirTerminologyValidation billingFhirTerminologyValidation(
+            String url, Set<String> additionalApis, WebClient webClient) {
+        return new FhirTerminologyValidation(url, properties.isFailOnError(), webClient, additionalApis) {
+
+            @Override
+            protected DocumentContext internalGet(String uri) throws WebClientException {
+                try {
+                    return CacheProvider.EXTERNAL_FHIR_TERMINOLOGY_CACHE.get(
+                            cacheProvider, uri, () -> super.internalGet(uri));
+                } catch (Cache.ValueRetrievalException e) {
+                    final Throwable cause = e.getCause();
+                    if (cause instanceof WebClientException) {
+                        throw new BadGatewayException(cause.getMessage(), cause);
+                    } else {
+                        throw new InternalServerException(
+                                "Failure during fhir terminology request: %s".formatted(cause.getMessage()), cause);
+                    }
+                }
+            }
+        };
     }
 
     private FhirTerminologyValidation fhirTerminologyValidation(String url, WebClient webClient) {
