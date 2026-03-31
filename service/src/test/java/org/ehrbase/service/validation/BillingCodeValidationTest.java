@@ -51,8 +51,10 @@ class BillingCodeValidationTest {
     @Test
     void billingApiPrefix_amaAssn_isAccepted() {
         String baseUrl = "http://terminology.local";
+        Set<String> billingApis = Set.of("//www.ama-assn.org", "//www.cms.gov", "//terminology.hl7.org");
 
-        FhirTerminologyValidation validation = spy(new FhirTerminologyValidation(baseUrl));
+        FhirTerminologyValidation validation = spy(new FhirTerminologyValidation(
+                baseUrl, true, org.springframework.web.reactive.function.client.WebClient.create(), billingApis));
 
         TerminologyParam param =
                 TerminologyParam.ofFhir("//www.ama-assn.org/CodeSystem?url=http://www.ama-assn.org/go/cpt");
@@ -67,8 +69,10 @@ class BillingCodeValidationTest {
     @Test
     void billingApiPrefix_terminologyHl7_isAccepted() {
         String baseUrl = "http://terminology.local";
+        Set<String> billingApis = Set.of("//www.ama-assn.org", "//www.cms.gov", "//terminology.hl7.org");
 
-        FhirTerminologyValidation validation = spy(new FhirTerminologyValidation(baseUrl));
+        FhirTerminologyValidation validation = spy(new FhirTerminologyValidation(
+                baseUrl, true, org.springframework.web.reactive.function.client.WebClient.create(), billingApis));
 
         TerminologyParam param =
                 TerminologyParam.ofFhir("//terminology.hl7.org/CodeSystem?url=http://hl7.org/fhir/sid/icd-10-cm");
@@ -83,8 +87,10 @@ class BillingCodeValidationTest {
     @Test
     void billingApiPrefix_cmsGov_isAccepted() {
         String baseUrl = "http://terminology.local";
+        Set<String> billingApis = Set.of("//www.ama-assn.org", "//www.cms.gov", "//terminology.hl7.org");
 
-        FhirTerminologyValidation validation = spy(new FhirTerminologyValidation(baseUrl));
+        FhirTerminologyValidation validation = spy(new FhirTerminologyValidation(
+                baseUrl, true, org.springframework.web.reactive.function.client.WebClient.create(), billingApis));
 
         TerminologyParam param = TerminologyParam.ofFhir(
                 "//www.cms.gov/CodeSystem?url=http://www.cms.gov/Medicare/Coding/HCPCSReleaseCodeSets");
