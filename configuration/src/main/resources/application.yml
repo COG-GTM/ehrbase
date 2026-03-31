@@ -121,6 +121,9 @@ ehrbase:
         web:
           # disables CSRF protection on management endpoints on base-path to use a client like curl or similar
           csrf-validation-enabled: true
+  billing:
+    queries:
+      seed-on-startup: false
 
 
 httpclient:

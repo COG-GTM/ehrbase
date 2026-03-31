@@ -1,0 +1,10 @@
+SELECT e/ehr_id/value as ehr_id,
+       c/uid/value as composition_uid,
+       c/context/start_time/value as encounter_date,
+       eval/data[at0001]/items[at0002]/value/value as diagnosis_text,
+       eval/data[at0001]/items[at0002]/value/defining_code/code_string as diagnosis_code,
+       eval/data[at0001]/items[at0002]/value/defining_code/terminology_id/value as code_system
+FROM EHR e
+  CONTAINS COMPOSITION c
+    CONTAINS EVALUATION eval[openEHR-EHR-EVALUATION.problem_diagnosis.v1]
+WHERE eval/data[at0001]/items[at0002]/value/defining_code/terminology_id/value = $code_system
