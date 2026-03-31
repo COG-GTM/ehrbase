@@ -6,5 +6,6 @@ SELECT e/ehr_id/value as ehr_id,
        c/context/setting/defining_code/code_string as setting_code
 FROM EHR e
   CONTAINS COMPOSITION c
-WHERE c/context/start_time/value >= $from_date
+WHERE e/ehr_id/value = $ehr_id
+  AND c/context/start_time/value >= $from_date
   AND c/context/start_time/value <= $to_date

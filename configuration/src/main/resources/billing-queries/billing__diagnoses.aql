@@ -8,3 +8,4 @@ FROM EHR e
   CONTAINS COMPOSITION c
     CONTAINS EVALUATION eval[openEHR-EHR-EVALUATION.problem_diagnosis.v1]
 WHERE eval/data[at0001]/items[at0002]/value/defining_code/terminology_id/value = $code_system
+  AND e/ehr_id/value = $ehr_id

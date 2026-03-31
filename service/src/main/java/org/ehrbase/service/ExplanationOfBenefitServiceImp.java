@@ -88,12 +88,8 @@ public class ExplanationOfBenefitServiceImp implements ExplanationOfBenefitServi
         // Query encounters with date range
         Map<String, Object> encounterParams = new HashMap<>();
         encounterParams.put("ehr_id", patientId);
-        if (fromDate != null) {
-            encounterParams.put("from_date", fromDate);
-        }
-        if (toDate != null) {
-            encounterParams.put("to_date", toDate);
-        }
+        encounterParams.put("from_date", fromDate != null ? fromDate : "1900-01-01T00:00:00");
+        encounterParams.put("to_date", toDate != null ? toDate : "2999-12-31T23:59:59");
         List<Map<String, Object>> encounters = executeBillingQuery(BillingQueryCatalog.ENCOUNTERS, encounterParams);
 
         // Group data by composition_uid and build EOB resources
@@ -326,10 +322,11 @@ public class ExplanationOfBenefitServiceImp implements ExplanationOfBenefitServi
 
         for (ResultHolder holder : result.getResultSet()) {
             Map<String, Object> row = new HashMap<>();
-            for (String columnId : holder.columnIds()) {
-                List<Object> values = holder.values();
-                if (!values.isEmpty()) {
-                    row.put(columnId, values.get(0));
+            List<String> colIds = new ArrayList<>(holder.columnIds());
+            List<Object> vals = holder.values();
+            for (int i = 0; i < colIds.size(); i++) {
+                if (i < vals.size()) {
+                    row.put(colIds.get(i), vals.get(i));
                 }
             }
             rows.add(row);
