@@ -86,6 +86,7 @@ public abstract class BaseController {
     public static final String API_CONTEXT_PATH = "${openehr-api.context-path:/rest/openehr}";
     public static final String API_CONTEXT_PATH_WITH_VERSION = API_CONTEXT_PATH + "/v1";
     public static final String ADMIN_API_CONTEXT_PATH = "${admin-api.context-path:/rest/admin}";
+    public static final String FHIR_API_CONTEXT_PATH = "${ehrbase.rest.fhir.context-path:/rest/fhir/r4}";
 
     public String getContextPath() {
         return ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
