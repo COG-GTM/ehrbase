@@ -1,0 +1,5 @@
+SELECT e/ehr_id/value as ehr_id,
+       e/ehr_status/subject/external_ref/id/value as patient_id,
+       e/ehr_status/subject/external_ref/namespace as patient_namespace
+FROM EHR e
+WHERE e/ehr_id/value = $ehr_id
