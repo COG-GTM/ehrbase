@@ -1,0 +1,11 @@
+mappings:
+  - fhirResourceType: Patient
+    openEhrMapping:
+      type: EHR_STATUS
+      fields:
+        - fhirPath: "Patient.identifier[0].value"
+          openEhrPath: "subject.external_ref.id.value"
+        - fhirPath: "Patient.identifier[0].system"
+          openEhrPath: "subject.external_ref.namespace"
+        - fhirPath: "Patient.active"
+          openEhrPath: "is_modifiable"

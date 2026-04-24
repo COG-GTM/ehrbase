@@ -1,0 +1,10 @@
+mappings:
+  - fhirResourceType: Condition
+    openEhrMapping:
+      type: COMPOSITION
+      templateId: "problem_diagnosis.v1"
+      fields:
+        - fhirPath: "Condition.code.coding[0].system"
+          openEhrPath: "/content[openEHR-EHR-EVALUATION.problem_diagnosis.v1]/data/items[at0002]/value/defining_code/terminology_id/value"
+        - fhirPath: "Condition.code.coding[0].code"
+          openEhrPath: "/content[openEHR-EHR-EVALUATION.problem_diagnosis.v1]/data/items[at0002]/value/defining_code/code_string"
