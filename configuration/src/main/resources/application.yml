@@ -253,3 +253,12 @@ plugin-manager:
   plugin-config-dir: ./plugin_config_dir
   enable: true
   plugin-context-path: /plugin
+
+# FHIR Facade plugin configuration
+fhir:
+  enabled: true
+  resource-types:
+    - Patient
+    - Observation
+    - Condition
+  mapping-config-dir: ./fhir-mappings
