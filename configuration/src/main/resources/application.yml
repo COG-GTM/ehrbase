@@ -256,7 +256,7 @@ plugin-manager:
 
 # FHIR Facade plugin configuration
 fhir:
-  enabled: true
+  enabled: false
   resource-types:
     - Patient
     - Observation
