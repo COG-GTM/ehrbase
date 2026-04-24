@@ -18,17 +18,23 @@
 package org.ehrbase.plugin.fhir;
 
 import ca.uhn.fhir.context.FhirContext;
+import ca.uhn.fhir.rest.api.EncodingEnum;
 import ca.uhn.fhir.rest.server.RestfulServer;
 import java.util.List;
+import java.util.Map;
 import org.ehrbase.plugin.fhir.provider.ConditionResourceProvider;
 import org.ehrbase.plugin.fhir.provider.ObservationResourceProvider;
 import org.ehrbase.plugin.fhir.provider.PatientResourceProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.HttpRequestHandler;
+import org.springframework.web.servlet.handler.SimpleUrlHandlerMapping;
+import org.springframework.web.servlet.mvc.HttpRequestHandlerAdapter;
 
 /**
  * Spring configuration that creates and configures the HAPI FHIR {@link RestfulServer}
- * with R4 context and stub resource providers.
+ * with R4 context and stub resource providers, and bridges it into the
+ * {@link org.springframework.web.servlet.DispatcherServlet} via an {@link HttpRequestHandler}.
  */
 @Configuration
 public class FhirServerConfig {
@@ -41,9 +47,27 @@ public class FhirServerConfig {
     @Bean
     public RestfulServer restfulServer(FhirContext fhirContext) {
         RestfulServer server = new RestfulServer(fhirContext);
-        server.setDefaultResponseEncoding(ca.uhn.fhir.rest.api.EncodingEnum.JSON);
+        server.setDefaultResponseEncoding(EncodingEnum.JSON);
         server.setResourceProviders(List.of(
                 new PatientResourceProvider(), new ObservationResourceProvider(), new ConditionResourceProvider()));
         return server;
+    }
+
+    @Bean
+    public FhirRequestHandler fhirRequestHandler(RestfulServer restfulServer) {
+        return new FhirRequestHandler(restfulServer);
+    }
+
+    @Bean
+    public SimpleUrlHandlerMapping fhirHandlerMapping(HttpRequestHandler fhirRequestHandler) {
+        SimpleUrlHandlerMapping mapping = new SimpleUrlHandlerMapping();
+        mapping.setUrlMap(Map.of("/**", fhirRequestHandler));
+        mapping.setOrder(0);
+        return mapping;
+    }
+
+    @Bean
+    public HttpRequestHandlerAdapter httpRequestHandlerAdapter() {
+        return new HttpRequestHandlerAdapter();
     }
 }
