@@ -170,9 +170,10 @@ class OpenEhrFhirMappingServiceTest {
             String resultJson = service.mapFromObservation(observation, mapping);
 
             assertThat(resultJson).isNotEmpty();
-            // Both components map to the same simplified archetype path structure,
-            // so the last written value (diastolic = 85) is present
+            assertThat(resultJson).contains("130");
             assertThat(resultJson).contains("85");
+            assertThat(resultJson).contains("at0004");
+            assertThat(resultJson).contains("at0005");
         }
     }
 

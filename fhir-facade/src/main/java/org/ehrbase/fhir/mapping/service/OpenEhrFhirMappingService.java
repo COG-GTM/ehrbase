@@ -19,6 +19,7 @@ package org.ehrbase.fhir.mapping.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.nedap.archie.rm.ehr.EhrStatus;
@@ -435,6 +436,9 @@ public class OpenEhrFhirMappingService {
 
     /**
      * Sets a value in a JSON tree at the given openEHR path.
+     * When a path segment includes an archetype node ID (e.g. {@code items[at0004]}),
+     * an array element with a matching {@code archetype_node_id} field is created or reused,
+     * mirroring the structure that {@link #extractFromCompositionJson} expects.
      */
     private void setJsonValueAtPath(ObjectNode root, String path, String value) {
         String[] segments = path.split("/");
@@ -447,15 +451,52 @@ public class OpenEhrFhirMappingService {
             }
 
             String nodeName = segment.contains("[") ? segment.substring(0, segment.indexOf('[')) : segment;
+            String archetypeId = segment.contains("[") && segment.contains("]")
+                    ? segment.substring(segment.indexOf('[') + 1, segment.indexOf(']'))
+                    : null;
 
             if (i == segments.length - 1) {
-                current.put(nodeName, value);
-            } else {
-                if (!current.has(nodeName) || !current.get(nodeName).isObject()) {
-                    current.putObject(nodeName);
+                if (archetypeId != null) {
+                    ObjectNode element = findOrCreateArrayElement(current, nodeName, archetypeId);
+                    element.put("value", value);
+                } else {
+                    current.put(nodeName, value);
                 }
-                current = (ObjectNode) current.get(nodeName);
+            } else {
+                if (archetypeId != null) {
+                    current = findOrCreateArrayElement(current, nodeName, archetypeId);
+                } else {
+                    if (!current.has(nodeName) || !current.get(nodeName).isObject()) {
+                        current.putObject(nodeName);
+                    }
+                    current = (ObjectNode) current.get(nodeName);
+                }
             }
         }
+    }
+
+    /**
+     * Finds an existing array element with the given archetype_node_id or creates a new one.
+     */
+    private ObjectNode findOrCreateArrayElement(ObjectNode parent, String nodeName, String archetypeId) {
+        ArrayNode array;
+        if (parent.has(nodeName) && parent.get(nodeName).isArray()) {
+            array = (ArrayNode) parent.get(nodeName);
+        } else {
+            array = parent.putArray(nodeName);
+        }
+
+        for (JsonNode element : array) {
+            if (element.isObject()) {
+                JsonNode atNode = element.get("archetype_node_id");
+                if (atNode != null && archetypeId.equals(atNode.asText())) {
+                    return (ObjectNode) element;
+                }
+            }
+        }
+
+        ObjectNode newElement = array.addObject();
+        newElement.put("archetype_node_id", archetypeId);
+        return newElement;
     }
 }
