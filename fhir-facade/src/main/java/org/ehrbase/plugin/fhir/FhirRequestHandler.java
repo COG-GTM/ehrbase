@@ -22,6 +22,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.web.HttpRequestHandler;
 import org.springframework.web.context.ServletContextAware;
 
@@ -32,7 +33,7 @@ import org.springframework.web.context.ServletContextAware;
  * every incoming request to the {@code RestfulServer.service()} method, performing lazy
  * initialization on first use.
  */
-public class FhirRequestHandler implements HttpRequestHandler, ServletContextAware {
+public class FhirRequestHandler implements HttpRequestHandler, ServletContextAware, DisposableBean {
 
     private final RestfulServer restfulServer;
     private jakarta.servlet.ServletContext servletContext;
@@ -52,6 +53,13 @@ public class FhirRequestHandler implements HttpRequestHandler, ServletContextAwa
             throws ServletException, IOException {
         ensureInitialized();
         restfulServer.service(request, response);
+    }
+
+    @Override
+    public void destroy() {
+        if (initialized) {
+            restfulServer.destroy();
+        }
     }
 
     private void ensureInitialized() throws ServletException {
