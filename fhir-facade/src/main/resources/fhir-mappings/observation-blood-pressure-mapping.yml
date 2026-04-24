@@ -1,0 +1,24 @@
+mappings:
+  - fhirResourceType: Observation
+    openEhrMapping:
+      type: COMPOSITION
+      templateId: "blood_pressure.v1"
+      fields:
+        - fhirPath: "Observation.code.coding[0].system"
+          value: "http://loinc.org"
+        - fhirPath: "Observation.code.coding[0].code"
+          value: "85354-9"
+        - fhirPath: "Observation.code.coding[0].display"
+          value: "Blood pressure panel"
+        - fhirPath: "Observation.component[0].code.coding[0].code"
+          value: "8480-6"
+        - fhirPath: "Observation.component[0].valueQuantity.value"
+          openEhrPath: "/content[openEHR-EHR-OBSERVATION.blood_pressure.v2]/data/events/data/items[at0004]/value/magnitude"
+        - fhirPath: "Observation.component[0].valueQuantity.unit"
+          value: "mmHg"
+        - fhirPath: "Observation.component[1].code.coding[0].code"
+          value: "8462-4"
+        - fhirPath: "Observation.component[1].valueQuantity.value"
+          openEhrPath: "/content[openEHR-EHR-OBSERVATION.blood_pressure.v2]/data/events/data/items[at0005]/value/magnitude"
+        - fhirPath: "Observation.component[1].valueQuantity.unit"
+          value: "mmHg"
