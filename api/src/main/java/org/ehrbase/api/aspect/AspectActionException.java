@@ -17,12 +17,20 @@
  */
 package org.ehrbase.api.aspect;
 
-import java.lang.annotation.Annotation;
-import java.util.List;
-import org.aspectj.lang.ProceedingJoinPoint;
+/**
+ * Checked exception thrown when an aspect action encounters an error during execution.
+ */
+public class AspectActionException extends Exception {
 
-public interface AnnotationAspect {
-    public List<Class<? extends Annotation>> matchAnnotations();
+    public AspectActionException(String message) {
+        super(message);
+    }
 
-    public Object action(ProceedingJoinPoint pjp, List<Annotation> annotations) throws AspectActionException;
+    public AspectActionException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public AspectActionException(Throwable cause) {
+        super(cause);
+    }
 }
