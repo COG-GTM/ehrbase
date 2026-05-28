@@ -17,28 +17,27 @@
  */
 package org.ehrbase.configuration.config.security;
 
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.security.crypto.password.NoOpPasswordEncoder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 class SecurityConfigBasicAuthTest {
 
-    @SuppressWarnings("deprecation")
     @Test
-    void ensureNopPasswordEncoderIsUsed() throws NoSuchMethodException {
+    void ensureBCryptPasswordEncoderIsUsed() throws NoSuchMethodException {
 
         SecurityConfigBasicAuth config = new SecurityConfigBasicAuth(new WebEndpointProperties());
 
         Bean bean = config.getClass().getMethod("passwordEncoder").getAnnotation(Bean.class);
         assertNotNull(bean, "Expected PasswordEncoder bean to be defined");
 
-        assertSame(
-                NoOpPasswordEncoder.getInstance(),
+        assertInstanceOf(
+                BCryptPasswordEncoder.class,
                 config.passwordEncoder(),
-                "Expected NoOpPasswordEncoder oassword encoder to be used.");
+                "Expected BCryptPasswordEncoder to be used.");
     }
 }
