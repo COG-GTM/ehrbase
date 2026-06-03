@@ -17,28 +17,34 @@
  */
 package org.ehrbase.configuration.config.security;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.security.crypto.password.NoOpPasswordEncoder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 class SecurityConfigBasicAuthTest {
 
-    @SuppressWarnings("deprecation")
     @Test
-    void ensureNopPasswordEncoderIsUsed() throws NoSuchMethodException {
+    void ensureSecurePasswordEncoderIsUsed() throws NoSuchMethodException {
 
         SecurityConfigBasicAuth config = new SecurityConfigBasicAuth(new WebEndpointProperties());
 
         Bean bean = config.getClass().getMethod("passwordEncoder").getAnnotation(Bean.class);
         assertNotNull(bean, "Expected PasswordEncoder bean to be defined");
 
-        assertSame(
-                NoOpPasswordEncoder.getInstance(),
-                config.passwordEncoder(),
-                "Expected NoOpPasswordEncoder oassword encoder to be used.");
+        PasswordEncoder passwordEncoder = config.passwordEncoder();
+        assertInstanceOf(
+                BCryptPasswordEncoder.class, passwordEncoder, "Expected a secure BCryptPasswordEncoder to be used.");
+
+        // verify the encoder actually hashes the raw password and matches it back
+        String encoded = passwordEncoder.encode("s3cr3t");
+        assertFalse(encoded.contains("s3cr3t"), "Expected the password not to be stored in plaintext.");
+        assertTrue(passwordEncoder.matches("s3cr3t", encoded), "Expected the encoded password to match the raw value.");
     }
 }
