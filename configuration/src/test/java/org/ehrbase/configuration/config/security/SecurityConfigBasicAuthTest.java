@@ -17,28 +17,34 @@
  */
 package org.ehrbase.configuration.config.security;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.security.crypto.password.NoOpPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 class SecurityConfigBasicAuthTest {
 
-    @SuppressWarnings("deprecation")
     @Test
-    void ensureNopPasswordEncoderIsUsed() throws NoSuchMethodException {
+    void ensureSecurePasswordEncoderIsUsed() throws NoSuchMethodException {
 
         SecurityConfigBasicAuth config = new SecurityConfigBasicAuth(new WebEndpointProperties());
 
         Bean bean = config.getClass().getMethod("passwordEncoder").getAnnotation(Bean.class);
         assertNotNull(bean, "Expected PasswordEncoder bean to be defined");
 
-        assertSame(
-                NoOpPasswordEncoder.getInstance(),
-                config.passwordEncoder(),
-                "Expected NoOpPasswordEncoder oassword encoder to be used.");
+        PasswordEncoder passwordEncoder = config.passwordEncoder();
+        assertNotNull(passwordEncoder, "Expected PasswordEncoder to be created");
+
+        String rawPassword = "s3cr3t-password";
+        String encodedPassword = passwordEncoder.encode(rawPassword);
+
+        assertFalse(rawPassword.equals(encodedPassword), "Expected password to be hashed and not stored in plaintext.");
+        assertTrue(
+                passwordEncoder.matches(rawPassword, encodedPassword),
+                "Expected raw password to match its encoded form.");
     }
 }
