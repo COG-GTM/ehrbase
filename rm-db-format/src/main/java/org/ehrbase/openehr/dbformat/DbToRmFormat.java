@@ -239,6 +239,13 @@ public final class DbToRmFormat {
         return reconstructRmObjectTree(jsonObjects, Record2::value1, Record2::value2, RmDbJson.MARSHAL_OM);
     }
 
+    /**
+     * @param jsonObjects as returned by {@link #parseDbObjectAggregateString(String)}
+     */
+    public static ObjectNode reconstructRmObjectTree(final Pair<CharSequence, CharSequence>[] jsonObjects) {
+        return reconstructRmObjectTree(jsonObjects, Pair::getLeft, Pair::getRight, RmDbJson.MARSHAL_OM);
+    }
+
     public static <T> ObjectNode reconstructRmObjectTree(
             final T[] jsonObjects,
             Function<T, ? extends CharSequence> idxExtractor,

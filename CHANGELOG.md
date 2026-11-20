@@ -9,6 +9,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
  ### Added
  ### Changed 
 - update to java 25 [#1595](https://github.com/ehrbase/ehrbase/pull/1595)
+- AQL: load selected RM objects via `string_agg` instead of `array_agg` of records, which is cheaper to decode
  ### Fixed
 - Adjusted some endpoints to comply with openEHR REST API specs; see [UPDATING.md](./UPDATING.md) [#1599](https://github.com/ehrbase/ehrbase/pull/1599)
 
