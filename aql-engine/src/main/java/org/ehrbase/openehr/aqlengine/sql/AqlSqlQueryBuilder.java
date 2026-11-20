@@ -64,14 +64,14 @@ import org.ehrbase.openehr.aqlengine.asl.model.query.AslStructureQuery;
 import org.ehrbase.openehr.aqlengine.asl.model.query.AslStructureQuery.AslSourceRelation;
 import org.ehrbase.openehr.aqlengine.sql.postprocessor.AqlSqlQueryPostProcessor;
 import org.ehrbase.openehr.dbformat.DbToRmFormat;
-import org.jooq.ArrayAggOrderByStep;
 import org.jooq.Condition;
+import org.jooq.Converter;
 import org.jooq.DSLContext;
+import org.jooq.DataType;
 import org.jooq.Field;
 import org.jooq.JSONB;
 import org.jooq.Operator;
 import org.jooq.Record;
-import org.jooq.Record2;
 import org.jooq.Result;
 import org.jooq.ResultQuery;
 import org.jooq.SelectConditionStep;
@@ -86,6 +86,7 @@ import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableLike;
 import org.jooq.impl.DSL;
+import org.jooq.impl.SQLDataType;
 import org.springframework.stereotype.Component;
 
 /**
@@ -642,12 +643,19 @@ public class AqlSqlQueryBuilder {
         return from.where(conditions).groupBy(pKeyFields);
     }
 
+    private static final DataType<Pair<CharSequence, CharSequence>[]> DB_OBJECT_AGGREGATE_TYPE =
+            SQLDataType.CLOB.asConvertedDataType(Converter.<String, Pair<CharSequence, CharSequence>[]>fromNullable(
+                    String.class, (Class) Pair[].class, DbToRmFormat::parseDbObjectAggregateString));
+
     /**
-     * The aggregated data row array can be processed by DbToRmFormat::reconstructFromDbFormat
+     * Aggregates the data rows as newline-separated <code>entity_idx || data::text</code> entries
+     * (jsonb text output contains no raw newlines), which avoids decoding a <code>record[]</code>
+     * with nested escaping.
+     * The result can be processed by DbToRmFormat::reconstructRmObjectTree
      *
      * @return
      */
-    private static ArrayAggOrderByStep<Record2<String, JSONB>[]> dataArrayAggregation(
+    private static Field<Pair<CharSequence, CharSequence>[]> dataArrayAggregation(
             Table<?> dataTable, AslSourceRelation type) {
 
         Field<String> keyField = dataTable.field(COMP_DATA.ENTITY_IDX);
@@ -665,6 +673,8 @@ public class AqlSqlQueryBuilder {
         } else {
             valueField = dataField;
         }
-        return DSL.arrayAgg(DSL.field(DSL.row(keyField, valueField)));
+        return DSL.field(
+                "string_agg({0}, {1})",
+                DB_OBJECT_AGGREGATE_TYPE, DSL.concat(keyField, valueField.cast(SQLDataType.CLOB)), DSL.inline("\n"));
     }
 }

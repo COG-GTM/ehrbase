@@ -300,6 +300,28 @@ class DbToRmFormatTest {
         });
     }
 
+    @ParameterizedTest
+    @EnumSource(
+            value = CompositionTestDataCanonicalJson.class,
+            mode = EnumSource.Mode.EXCLUDE,
+            names = {"INVALID"})
+    void roundtripTestOneAggregateString(CompositionTestDataCanonicalJson example) throws IOException {
+        roundtripTest(example, c -> {
+            List<StructureNode> roots = VersionedObjectDataStructure.createDataStructure(c);
+            // like: string_agg(d.entity_idx || d.data::text, E'\n')
+            String aggregate = roots.stream()
+                    .filter(r -> r.getStructureRmType().isStructureEntry())
+                    .map(r -> r.getEntityIdx().printIndexString(false, true)
+                            + VersionedObjectDataStructure.applyRmAliases(r.getJsonNode())
+                                    .toString())
+                    .collect(Collectors.joining("\n"));
+            ObjectNode dbObject =
+                    DbToRmFormat.reconstructRmObjectTree(DbToRmFormat.parseDbObjectAggregateString(aggregate));
+            DbToRmFormat.revertDbInPlace(dbObject, false, true, true);
+            return RmDbJson.MARSHAL_OM.convertValue(dbObject, Composition.class);
+        });
+    }
+
     static String createDbOneJson(Composition composition) {
         List<StructureNode> roots = VersionedObjectDataStructure.createDataStructure(composition);
         Stream<Pair<StructureIndex, JsonNode>> stream = roots.stream()
